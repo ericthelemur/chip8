@@ -222,10 +222,9 @@ impl VMState {
                         let old_px = &mut self.display[pxy as usize][pxx as usize];
                         let mask = 2_u8.pow(7 - j as u32);
                         let new_px = (row & mask) >> (7 - j);
-                        println!("{} {} {} {}", j, mask, new_px, row & mask);
                         if new_px == 1 && *old_px == 1 { // if collision
                             self.registers[0xF] = 1 
-                        }    
+                        }
                         *old_px ^= new_px;
                     }
                 }
