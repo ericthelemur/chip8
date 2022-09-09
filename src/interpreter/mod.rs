@@ -87,12 +87,15 @@ impl VMState {
         return p0 | p1 | p2;
     }
 
-    fn execute(&mut self, i: (u8, u8), keys: &chip8_base::Keys) {
+    fn execute(&mut self, i: (u8, u8), keys: &chip8_base::Keys) -> Option<chip8_base::Display> {
         let (n0, n1, n2, n3) = VMState::extract_nibbles(i);
         match (n0, n1, n2, n3) {
             (0x0, 0x0, 0x0, 0x0) => {},
             // 00E0 CLS: Clears the display
-            (0x0, 0x0, 0xE, 0x0) => self.display = [[0; 64]; 32],
+            (0x0, 0x0, 0xE, 0x0) => {
+                self.display = [[0; 64]; 32];
+                return Some(self.display);
+            },
             // 00EE RET: Return from subroutine
             (0x0, 0x0, 0xE, 0xE) => {
                 self.program_counter = self.stack[self.stack_pointer as usize];
@@ -228,6 +231,7 @@ impl VMState {
                         *old_px ^= new_px;
                     }
                 }
+                return Some(self.display)
             },
             // Ex9E SKP Vx: Skip next instruction if key with the value of Vx is pressed.
             (0xE, x, 0x9, 0xE) => {
@@ -307,6 +311,7 @@ impl VMState {
             },
             _ => println!("Not implemented {} {} {} {}", n0, n1, n2, n3),
         }
+        None
     }
 }
 
@@ -324,9 +329,7 @@ impl chip8_base::Interpreter for VMState {
         let instr = self.fetch();
         self.program_counter += 2;
         self.program_counter %= 4096;
-        self.execute(instr, keys);
-        
-        Some(self.display)
+        self.execute(instr, keys)
     }
 
     fn speed(&self) -> std::time::Duration {

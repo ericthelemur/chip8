@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 rs118-chip8 = "0.1"
 rand = "0.8.5"
+clap = { version = "3.1.6", features = ["cargo", "derive"] }
