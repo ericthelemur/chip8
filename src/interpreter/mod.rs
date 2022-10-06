@@ -1,7 +1,5 @@
 use std::time::Duration;
-use rand::random;
-
-use chip8_base::Interpreter;
+use chip8_base::{Interpreter, Pixel};
 
 const FONT: [u8; 80] = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -57,7 +55,7 @@ impl VMState {
             stack_pointer: 0,
             stack: [0; 16],
             index: 0,
-            display: [[0; 64]; 32],
+            display: [[Pixel::default(); 64]; 32],
             speed: Duration::from_secs_f64(s),
             decrement_timer: TIME_60HZ,
             delay_timer: 0,
@@ -93,7 +91,7 @@ impl VMState {
             (0x0, 0x0, 0x0, 0x0) => {},
             // 00E0 CLS: Clears the display
             (0x0, 0x0, 0xE, 0x0) => {
-                self.display = [[0; 64]; 32];
+                self.display = [[Pixel::default(); 64]; 32];
                 return Some(self.display);
             },
             // 00EE RET: Return from subroutine
@@ -224,8 +222,9 @@ impl VMState {
                         }
                         let old_px = &mut self.display[pxy as usize][pxx as usize];
                         let mask = 2_u8.pow(7 - j as u32);
-                        let new_px = (row & mask) >> (7 - j);
-                        if new_px == 1 && *old_px == 1 { // if collision
+                        let new_u8 = (row & mask) >> (7 - j);
+                        let new_px: Pixel = new_u8.try_into().unwrap();
+                        if (new_px & *old_px).into() { // if collision
                             self.registers[0xF] = 1 
                         }
                         *old_px ^= new_px;
@@ -315,7 +314,7 @@ impl VMState {
     }
 }
 
-impl chip8_base::Interpreter for VMState {
+impl Interpreter for VMState {
     fn step(&mut self, keys: &chip8_base::Keys) -> Option<chip8_base::Display> {
         
         // Timers
@@ -338,6 +337,7 @@ impl chip8_base::Interpreter for VMState {
 
     fn buzzer_active(&self) -> bool {
         self.sound_timer > 0
+        // true
     }
 }
 
